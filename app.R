@@ -41,7 +41,8 @@ last_date_updated <- paste0(month.name[m], " ", d,", ",y)
 # For getting all players name as a vector -------------------------------------
 
 players_name_list = unique(c(t20$striker, t20$non_striker, t20$bowler)) |> 
-    as.character() |> sort()
+    as.character() |> 
+    sort()
 
 # Batting Analysis -------------------------------------------------------------
 
@@ -59,7 +60,6 @@ sidebar = dashboardSidebar(
             menuItem("Bowling Analysis", tabName = "bowl", icon = icon("basketball-ball", lib = "font-awesome")),
             menuItem("About", tabName = "about", icon = icon("address-card", lib = "font-awesome"))
             ))
-
 
 body = dashboardBody(
     tabItems(
@@ -96,7 +96,44 @@ body = dashboardBody(
                        valueBoxOutput("value22", width = 2),
                        valueBoxOutput("value23", width = 2))
         
-        )
+        ),
+        tabItem(tabName = "about", h2("About the R Shiny App"), 
+                h4(p(style = "text-align: justify; font-size = 14px",
+                     "The R Shiny App", tags$b("T20performR"), "is intended to attract cricket enthusiasts who wish to accumulate
+                       every bit of information about their favourite players. This is an open-source encyclopaedia of cricketers
+                       those who are cricbees and have an analytical mindset. The work is designed to demonstrate the performance
+                       analysis of T20I cricketers statistically, whereas exploratory data analysis and visualisation tools provide
+                       the key insights of them. Not only it will capture the individual performances of the cricket stars at the
+                       granular level just by selecting them from the dropdown menu but also it equips the comparative study of
+                       multiple cricketers by some appropriate metrics. The summary statistics of batting and bowling of the
+                       individuals are displayed separately on two pages. This dashboard is based on the ball-by-ball data from the
+                       website", tags$a(href = "https://cricsheet.org/", "cricsheet"), "filtered by T20 International matches for 
+                       men only. The dataset is updated in the backend on every final day of each month. The algorithm uses the 
+                       necessary R libraries (packages) as well as the scratch codes to process the assimilated data and the required analysis.")),
+                h5(tags$em(tags$b(paste("*Last updated on", last_date_updated, "23:59:59 IST (", tot_mat,
+                                        " matches covered)"))), align = "right"), ## Date Update
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                h4("Developed by", tags$b(tags$i("Samrit Pramanik")), align = "center"),
+                h6(tags$hr()),
+                h1(tags$a(href = "https://www.linkedin.com/in/samritpramanik24/", icon("linkedin")), 
+                   tags$a(href = "mailto:samrit.2442@gmail.com", icon("envelope")),
+                   tags$a(href = "https://www.facebook.com/samrit.pramanik24ps/" , icon("facebook-square")),
+                   tags$a(href = "https://github.com/samrit2442", icon("github")),
+                   tags$a(href = "https://www.instagram.com/dark_cosmos24/", icon("instagram")), 
+                   tags$a(href = "https://api.whatsapp.com/send?phone=919038337857", icon("whatsapp")), # tags$style(HTML("color: green"))
+                   tags$a(href = "https://t.me/darkcosmos24", icon("telegram")), 
+                   tags$a(href = "https://twitter.com/Samrit2442", icon("twitter")), align = "center"),
+                tags$br(),
+                h1(icon("r-project"), style = "font-size: 100px",  align = "center"),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                # tags$blockquote("Shiny-Box is still under continuous development. Please look forward to future updates!"),
+                h5("Copyright", icon("copyright"), " 2024 Samrit Pramanik"), ". All Rights Reserved.")
+        
     ))
 
 
