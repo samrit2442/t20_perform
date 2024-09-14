@@ -70,7 +70,17 @@ body = dashboardBody(
             fluidRow(
                 column(12,
                    valueBoxOutput("value1", width = 2),
-                   valueBoxOutput("value2", width = 2)))
+                   valueBoxOutput("value2", width = 2),
+                   valueBoxOutput("value3", width = 2),
+                   valueBoxOutput("value4", width = 2),
+                   valueBoxOutput("value5", width = 2),
+                   valueBoxOutput("value6", width = 2),
+                   valueBoxOutput("value7", width = 2),
+                   valueBoxOutput("value8", width = 2),
+                   valueBoxOutput("value9", width = 2),
+                   valueBoxOutput("value10", width = 2),
+                   valueBoxOutput("value11", width = 2),
+                   valueBoxOutput("value12", width = 2)))
         )))
 
 
@@ -144,6 +154,70 @@ server <- function(session, input, output) {
                  "Total Runs Scored", 
                  color = "blue")
     })
+    
+    output$value3 <- renderValueBox({
+        valueBox(sum(stat_react()$Balls), 
+                 "Total Balls Faced", 
+                 color = "teal")
+    }) # Total Balls Faced
+    
+    output$value4 <- renderValueBox({
+        valueBox(sum(stat_react()$isNO), 
+                 "Not Outs", 
+                 color = "green")
+    }) # Not Outs
+    
+    output$value5 <- renderValueBox({
+        valueBox(round(sum(stat_react()$Runs)/(nrow(stat_react())-sum(stat_react()$isNO)),2), 
+                 "Batting Average", 
+                 color = "navy")
+    }) # Batting Average
+    
+    output$value6 <- renderValueBox({
+        valueBox(round(mean(stat_react()$Runs),2), 
+                 "Runs Per Innings", 
+                 color = "black")
+    }) # Runs Per Innings
+    
+    output$value7 <- renderValueBox({
+        valueBox(round(sum(stat_react()$Runs)/(sum(stat_react()$Balls))*100,2),
+                 "Strike Rate",
+                 color = "red")
+    }) # Strike Rate
+    
+    output$value8 <- renderValueBox({
+        valueBox(paste0(sum(stat_react()$isThirty), "/",
+                        sum(stat_react()$isFifty), "/",
+                        sum(stat_react()$isHundred)), "30+ / 50s / 100s", 
+                 color = "olive")
+    }) # 30s/50s/100s
+    
+    output$value9 <- renderValueBox({
+        HS = ""
+        if(stat_react()[which.max(stat_react()$Runs), "isNO"] == 1)
+            HS = paste0(max(stat_react()$Runs),"*","(", stat_react()[which.max(stat_react()$Runs), "Balls"],")")
+        else
+            HS = paste0(max(stat_react()$Runs),"(", stat_react()[which.max(stat_react()$Runs), "Balls"],")")
+        valueBox(HS, "Highest Score", color = "purple")
+    }) # Highest Score
+    
+    output$value10 <- renderValueBox({
+        valueBox(paste0(sum(stat_react()$Fours), "/", 
+                        sum(stat_react()$Sixes)), 
+                 "Fours / Sixes", color = "maroon")
+    }) # 4s/6s
+    
+    output$value11 <- renderValueBox({
+        valueBox(paste0(round((sum(stat_react()$Fours) + sum(stat_react()$Sixes))/sum(stat_react()$Balls)*100,2),"%"),
+                 "Boundary Percentage",
+                 color = "orange")
+    }) # Boundary %
+    
+    output$value12 <- renderValueBox({
+        valueBox(paste0(round(sum(stat_react()$Dots)/sum(stat_react()$Balls)*100,2),"%"), 
+                 "Dot Percentage", 
+                 color = "fuchsia")
+    }) # Dot %
 }
 
 
