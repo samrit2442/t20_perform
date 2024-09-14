@@ -81,7 +81,23 @@ body = dashboardBody(
                    valueBoxOutput("value10", width = 2),
                    valueBoxOutput("value11", width = 2),
                    valueBoxOutput("value12", width = 2)))
-        )))
+        ),
+        tabItem(tabName = "bowl", h1("Bowling Analysis"),tags$hr(),
+                column(12,
+                       valueBoxOutput("value13", width = 2),
+                       valueBoxOutput("value14", width = 2),
+                       valueBoxOutput("value15", width = 2),
+                       valueBoxOutput("value16", width = 2),
+                       valueBoxOutput("value17", width = 2),
+                       valueBoxOutput("value18", width = 2),
+                       valueBoxOutput("value19", width = 2),
+                       valueBoxOutput("value20", width = 2),
+                       valueBoxOutput("value21", width = 2),
+                       valueBoxOutput("value22", width = 2),
+                       valueBoxOutput("value23", width = 2))
+        
+        )
+    ))
 
 
 
@@ -140,7 +156,6 @@ server <- function(session, input, output) {
 
     # Output -----------------------------------------------------------------------
 
-                
     output$name <- renderText({paste("Career Overview of", input$player_name)})
     
     output$value1 <- renderValueBox({
@@ -218,6 +233,207 @@ server <- function(session, input, output) {
                  "Dot Percentage", 
                  color = "fuchsia")
     }) # Dot %
+    
+    stat_react2 <- reactive({
+        fig1 <- plot_ly(x = stat_react()$Runs, type = "histogram")
+        fig1
+    })
+    
+    output$hist <- renderPlotly({stat_react2()}) # Histogram of Runs
+    
+    stat_react3 <- reactive({
+        stat9 = stat_react() |> dplyr::filter(wicket_type != "not out")
+        dd = data.frame(table(stat9$wicket_type))
+        
+        fig <- dd |> plot_ly(labels = ~Var1, values = ~Freq) |>
+            add_pie(hole = 0.5) |> 
+            layout(showlegend = T,
+                   xaxis = list(showgrid = F, zeroline = F, showticklabels = F),
+                   yaxis = list(showgrid = F, zeroline = F, showticklabels = F))
+        fig
+    })
+    
+    output$donut <- renderPlotly({stat_react3()}) # Donut Chart of Dismissal Types
+    
+    stat_react4 <- reactive({
+        data1 <- t20 |> 
+            dplyr::filter(striker == input$player_name & wides == 0)
+        stat7 <- data1 |> 
+            dplyr::group_by(over_type) |> 
+            dplyr::summarise(Runs = sum(runs_off_bat), Six = sum(isSix), Four = sum(isFour),
+                             SR = round(sum(runs_off_bat)/length(runs_off_bat)*100,2))
+        
+        stat8 <- table(stat_react()$over_type) |> t() |> as.data.frame()
+        stat8 <- stat8[,-1]
+        colnames(stat8) = c("over_type", "Dismissed")
+        table1 <- left_join(stat7, stat8) |> 
+            dplyr::arrange(desc(over_type))
+        colnames(table1) <- c("Over Type", "Runs", "Sixes", "Fours", "SR", "Dismissed")
+        
+        reactable(
+            table1,
+            pagination = FALSE,
+            compact = TRUE,
+            defaultColDef = colDef(
+                cell = data_bars(table1,
+                                 fill_color = c("blue", "black"),
+                                 fill_gradient = TRUE,
+                                 bar_height = 30,
+                                 background = "lightgrey")))
+    })
+    
+    output$table1 <- renderReactable({stat_react4()}) # Table-1
+    
+    stat_react_bowl1 <- reactive({
+        wk_var = c("stumped", "caught", "hit wicket", "bowled", "caught and bowled", "lbw")
+        
+        t20$isBowler_wicket = ifelse(t20$wicket_type %in% wk_var, 1, 0)
+        
+        ## To find out Runs and Wickets at each innings
+        
+        bw_stat1 <- t20 |> 
+            dplyr::filter(bowler == input$player_name & legbyes == 0 & byes == 0 & penalty == 0) |> 
+            dplyr::group_by(start_date, match_id) |>
+            dplyr::summarise(Runs = sum(Runs), Wickets = sum(isBowler_wicket))
+        
+        ## To find out Dot Balls at each innings
+        
+        bw_stat2 <- t20 |> 
+            dplyr::filter(bowler == input$player_name) |> 
+            dplyr::mutate(isBowlDot = ifelse(runs_off_bat + wides + noballs == 0,1,0)) |> 
+            dplyr::group_by(match_id) |> 
+            dplyr::summarise(Dots = sum(isBowlDot))
+        
+        bw_stat <- left_join(bw_stat1, bw_stat2, by = "match_id")
+        
+        ## To find out total balls bowled in each innings
+        
+        bw_stat3 <- t20 |>
+            dplyr::filter(bowler == input$player_name & wides == 0 & noballs == 0) |>
+            dplyr::group_by(match_id) |> 
+            dplyr::summarise(Balls = length(runs_off_bat))
+        
+        bw_stat <- left_join(bw_stat, bw_stat3, by = "match_id")
+        
+        # https://youtu.be/UmDItbiDV6o (23:08 - 23:45) ### Highligths of Ban vs SL 18 Sep 2007
+        
+        bw_stat4 <- t20 |> 
+            dplyr::filter(bowler == input$player_name) |>
+            dplyr::mutate(BowlRuns = runs_off_bat + wides + noballs) |>
+            dplyr::group_by(match_id, over) |>
+            dplyr::summarise(isMaiden = ifelse(sum(BowlRuns) == 0, 1, 0)) |> 
+            dplyr::group_by(match_id) |> dplyr::summarise(Maiden = sum(isMaiden))
+        
+        bw_stat <- left_join(bw_stat, bw_stat4, by = "match_id")
+        
+        bw_stat5 <- t20 |> 
+            dplyr::filter(bowler == input$player_name) |>
+            dplyr::group_by(match_id) |> 
+            dplyr::select(match_id, innings, venue, batting_team) |> 
+            unique()
+        
+        bw_stat <- left_join(bw_stat, bw_stat5, by = "match_id")
+        
+        bw_stat <- bw_stat |> 
+            dplyr::mutate(Econ = round(Runs/Balls*6,2),
+                          is4wkt = ifelse(Wickets == 4, 1, 0),
+                          is5wkt = ifelse(Wickets >= 5, 1, 0))
+        bw_stat
+        
+    }) ### For Bowling Analysis
+    
+    stat_react_bowl2 <- reactive({
+        bw_stat6 <- stat_react_bowl1() |> 
+            dplyr::group_by(batting_team) |>
+            dplyr::summarise(Innings = length(match_id), 
+                             Wickets = sum(Wickets),
+                             Dots = sum(Dots))
+        
+        reactable(
+            bw_stat6,
+            pagination = FALSE,
+            compact = TRUE,
+            defaultColDef = colDef(
+                cell = data_bars(bw_stat6,
+                                 fill_color = c("blue", "black"),
+                                 fill_gradient = TRUE,
+                                 bar_height = 30,
+                                 background = "lightgrey")))
+    })
+    
+    output$table2 <- renderReactable({stat_react_bowl2()}) # Table-2
+    
+    output$value13 <- renderValueBox({
+        valueBox(nrow(stat_react_bowl1()), 
+                 "Total Innings Bowled", 
+                 color = "light-blue")
+    }) # Innings
+    
+    output$value14 <- renderValueBox({
+        valueBox(sum(stat_react_bowl1()$Balls), 
+                 "Total Balls Bowled", 
+                 color = "aqua")
+    }) # Balls
+    
+    output$value15 <- renderValueBox({
+        valueBox(sum(stat_react_bowl1()$Runs),
+                 "Total Runs Conceded", 
+                 color = "navy")
+    }) # Runs
+    
+    output$value16 <- renderValueBox({
+        valueBox(sum(stat_react_bowl1()$Wickets), 
+                 "Total Wickets Taken", 
+                 color = "red")
+    }) # Wickets
+    
+    output$value17 <- renderValueBox({
+        BBI = ""
+        W = max(stat_react_bowl1()$Wickets)
+        R = min(stat_react_bowl1()$Runs[which(stat_react_bowl1()$Wickets == W)])
+        if (sum(stat_react_bowl1()$Wickets) == 0)
+            BBI = paste0("-")
+        else
+            BBI = paste0(W,"/",R)
+        valueBox(BBI, "Best Bowling Figure", color = "teal")
+    }) # BBI
+    
+    output$value18 <- renderValueBox({
+        valueBox(sum(stat_react_bowl1()$is4wkt), 
+                 "4 Wickets Hauls", 
+                 color = "olive")
+    }) # 4Wkts
+    
+    output$value19 <- renderValueBox({
+        valueBox(sum(stat_react_bowl1()$is5wkt), 
+                 "5 Wickets Hauls", 
+                 color = "orange")
+    }) # 5Wkts
+    
+    output$value20 <- renderValueBox({
+        valueBox(round(sum(stat_react_bowl1()$Runs)/sum(stat_react_bowl1()$Wickets),2), 
+                 "Bowling Average", 
+                 color = "lime")
+    }) # Bowling Average
+    
+    output$value21 <- renderValueBox({
+        valueBox(round(sum(stat_react_bowl1()$Runs)/sum(stat_react_bowl1()$Balls)*6,2), 
+                 "Economy Rate", 
+                 color = "maroon")
+    }) # Economy Rate
+    
+    output$value22 <- renderValueBox({
+        valueBox(round(sum(stat_react_bowl1()$Balls)/sum(stat_react_bowl1()$Wickets),2), 
+                 "Bowling Strike Rate", 
+                 color = "purple")
+    }) # Bowling Strike Rate
+    
+    output$value23 <- renderValueBox({
+        valueBox(paste0(round(sum(stat_react_bowl1()$Dots)/sum(stat_react_bowl1()$Balls)*100,2),"%"), 
+                 "Dot Ball Percentage", 
+                 color = "purple")
+    }) # Dot%
+
 }
 
 
