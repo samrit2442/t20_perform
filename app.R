@@ -1,6 +1,7 @@
 library(pacman)
 pacman::p_load(plyr, tidyverse, plotly, DT, shiny, shinythemes,
-               shinydashboard, fontawesome, htmltools, scales, reactablefmtr)
+               shinydashboard, fontawesome, htmltools, scales, reactablefmtr,
+               rsconnect)
 
 # Read the Raw Data ------------------------------------------------------------
 
