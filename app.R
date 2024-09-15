@@ -1,7 +1,7 @@
 library(pacman)
 pacman::p_load(plyr, tidyverse, plotly, DT, shiny, shinythemes,
                shinydashboard, fontawesome, htmltools, scales, reactablefmtr,
-               rsconnect)
+               rsconnect, RColorBrewer)
 
 # Read the Raw Data ------------------------------------------------------------
 
@@ -80,7 +80,20 @@ body = dashboardBody(
                    valueBoxOutput("value9", width = 2),
                    valueBoxOutput("value10", width = 2),
                    valueBoxOutput("value11", width = 2),
-                   valueBoxOutput("value12", width = 2)))
+                   valueBoxOutput("value12", width = 2)),
+                h3("Runs Distribution"),
+                
+                fluidRow(
+                    box(title = "Histogram of Runs", solidHeader = T, collapsible = T, status = "primary",
+                        plotlyOutput("hist")),
+                    
+                    box(title = "Dismissal Type", solidHeader = T, collapsible = T, status = "primary",
+                        plotlyOutput("donut"))),
+                
+                fluidRow(
+                    box(title = "Phase of Play", solidHeader = T, collapsible = T, status = "primary",
+                        reactableOutput("table1", height = "200px", width = "600px")))
+                )
         ),
         tabItem(tabName = "bowl", h1("Bowling Analysis"),tags$hr(),
                 column(12,
@@ -94,8 +107,13 @@ body = dashboardBody(
                        valueBoxOutput("value20", width = 2),
                        valueBoxOutput("value21", width = 2),
                        valueBoxOutput("value22", width = 2),
-                       valueBoxOutput("value23", width = 2))
-        
+                       valueBoxOutput("value23", width = 2)),
+                fluidRow(
+                    box(title = "Bowling Performance against Opponents", solidHeader = T, collapsible = T, status = "primary",
+                        reactableOutput("table2", height = "auto", width = "auto"))),
+                fluidRow(
+                    box(title = "Wicket Type Distribution", solidHeader = T, collapsible = T, status = "primary",
+                        plotlyOutput("pie")))
         ),
         tabItem(tabName = "about", h2("About the R Shiny App"), 
                 h4(p(style = "text-align: justify; font-size = 14px",
@@ -108,8 +126,8 @@ body = dashboardBody(
                        multiple cricketers by some appropriate metrics. The summary statistics of batting and bowling of the
                        individuals are displayed separately on two pages. This dashboard is based on the ball-by-ball data from the
                        website", tags$a(href = "https://cricsheet.org/", "cricsheet"), "filtered by T20 International matches for 
-                       men only. The dataset is updated in the backend on every final day of each month. The algorithm uses the 
-                       necessary R libraries (packages) as well as the scratch codes to process the assimilated data and the required analysis.")),
+                       men only. The algorithm uses the necessary R libraries (packages) as well as the scratch codes to process the 
+                       assimilated data and the required analysis.")),
                 h5(tags$em(tags$b(paste("*Last updated on", last_date_updated, "23:59:59 IST (", tot_mat,
                                         " matches covered)"))), align = "right"), ## Date Update
                 tags$br(),
@@ -132,7 +150,7 @@ body = dashboardBody(
                 tags$br(),
                 tags$br(),
                 # tags$blockquote("Shiny-Box is still under continuous development. Please look forward to future updates!"),
-                h5("Copyright", icon("copyright"), " 2024 Samrit Pramanik"), ". All Rights Reserved.")
+                h5("Copyright", icon("copyright"), " 2024, Samrit Pramanik. "), "All Rights Reserved.")
         
     ))
 
@@ -199,13 +217,13 @@ server <- function(session, input, output) {
         valueBox(nrow(stat_react()), 
                  "Total Innings Played", 
                  color = "light-blue")
-    })
+    }) # Total Innings Played
     
     output$value2 <- renderValueBox({
         valueBox(sum(stat_react()$Runs), 
                  "Total Runs Scored", 
                  color = "blue")
-    })
+    }) # Total Runs Scored
     
     output$value3 <- renderValueBox({
         valueBox(sum(stat_react()$Balls), 
@@ -272,17 +290,30 @@ server <- function(session, input, output) {
     }) # Dot %
     
     stat_react2 <- reactive({
-        fig1 <- plot_ly(x = stat_react()$Runs, type = "histogram")
+        fig1 <- plot_ly(x = stat_react()$Runs, type = "histogram",
+                        marker = list(color = 'lightblue', line = list(color = 'darkblue', width = 1))) %>%
+            layout(
+                title = "Distribution of Runs",   
+                xaxis = list(title = "Runs Scored",   
+                             titlefont = list(size = 18, color = "darkblue"),  
+                             tickfont = list(size = 14, color = "black")),     
+                yaxis = list(title = "Frequency",  
+                             titlefont = list(size = 18, color = "darkblue"),  
+                             tickfont = list(size = 14, color = "black")),
+                plot_bgcolor = '#f7f7f7',           
+                paper_bgcolor = '#f2f2f2')
         fig1
     })
     
     output$hist <- renderPlotly({stat_react2()}) # Histogram of Runs
     
     stat_react3 <- reactive({
-        stat9 = stat_react() |> dplyr::filter(wicket_type != "not out")
+        stat9 = stat_react() |> 
+            dplyr::filter(wicket_type != "not out")
         dd = data.frame(table(stat9$wicket_type))
         
-        fig <- dd |> plot_ly(labels = ~Var1, values = ~Freq) |>
+        fig <- dd |> 
+            plot_ly(labels = ~Var1, values = ~Freq) |>
             add_pie(hole = 0.5) |> 
             layout(showlegend = T,
                    xaxis = list(showgrid = F, zeroline = F, showticklabels = F),
@@ -359,7 +390,8 @@ server <- function(session, input, output) {
             dplyr::mutate(BowlRuns = runs_off_bat + wides + noballs) |>
             dplyr::group_by(match_id, over) |>
             dplyr::summarise(isMaiden = ifelse(sum(BowlRuns) == 0, 1, 0)) |> 
-            dplyr::group_by(match_id) |> dplyr::summarise(Maiden = sum(isMaiden))
+            dplyr::group_by(match_id) |> 
+            dplyr::summarise(Maiden = sum(isMaiden))
         
         bw_stat <- left_join(bw_stat, bw_stat4, by = "match_id")
         
@@ -372,7 +404,7 @@ server <- function(session, input, output) {
         bw_stat <- left_join(bw_stat, bw_stat5, by = "match_id")
         
         bw_stat <- bw_stat |> 
-            dplyr::mutate(Econ = round(Runs/Balls*6,2),
+            dplyr::mutate(Econ = round(Runs/Balls*6, 2),
                           is4wkt = ifelse(Wickets == 4, 1, 0),
                           is5wkt = ifelse(Wickets >= 5, 1, 0))
         bw_stat
@@ -388,17 +420,41 @@ server <- function(session, input, output) {
         
         reactable(
             bw_stat6,
-            pagination = FALSE,
-            compact = TRUE,
+            pagination = F,
+            compact = T,
             defaultColDef = colDef(
                 cell = data_bars(bw_stat6,
                                  fill_color = c("blue", "black"),
-                                 fill_gradient = TRUE,
+                                 fill_gradient = T,
                                  bar_height = 30,
                                  background = "lightgrey")))
     })
     
     output$table2 <- renderReactable({stat_react_bowl2()}) # Table-2
+    
+    stat_react_bowl3 <- reactive({
+        wk_var = c("stumped", "caught", "hit wicket", "bowled", "caught and bowled", "lbw")
+        t20$isBowler_wicket = ifelse(t20$wicket_type %in% wk_var, 1, 0)
+        
+        wkt_dist <- t20 |> 
+            dplyr::filter(bowler == input$player_name) |> 
+            dplyr::filter(isBowler_wicket == 1) |> 
+            dplyr::group_by(wicket_type) |> 
+            dplyr::tally()
+        
+        no_wkts_types <- length(wkt_dist$wicket_type)   
+        wk_dist_plt <- wkt_dist %>%
+            plot_ly(labels = ~wicket_type,
+                    values = n,
+                    type = 'pie',
+                    textinfo = 'label+percent',    
+                    insidetextorientation = 'radial',
+                    marker = list(colors = brewer.pal(min(no_wkts_types, 6), "Set3"))) %>%
+            layout(title = "Wicket Distribution by Type", showlegend = T)
+        wk_dist_plt
+    }) # Wickets Distribution
+    
+    output$pie <- renderPlotly({stat_react_bowl3()})
     
     output$value13 <- renderValueBox({
         valueBox(nrow(stat_react_bowl1()), 
